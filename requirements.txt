@@ -1,6 +1,6 @@
+streamlit
 torch
 torchvision
-tqdm
 pillow
 numpy
-streamlit
+tqdm
