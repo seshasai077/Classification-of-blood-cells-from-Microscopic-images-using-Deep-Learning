@@ -5,8 +5,8 @@ from torchvision import transforms
 from pathlib import Path
 import numpy as np
 
-from model import build_model
-from utils import read_labels
+from src.model import build_model
+from src.utils import read_labels
 
 # -----------------------------------
 # PAGE CONFIG
