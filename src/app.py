@@ -3,8 +3,8 @@ from PIL import Image
 import torch
 from torchvision import transforms
 import numpy as np
-import urllib.request
 import os
+import gdown
 
 from model import build_model
 
@@ -35,6 +35,128 @@ h1 { text-align: center; font-size: 2.5rem !important; }
 
 # -----------------------------------
 # HEADER
+# -----------------------------------
+st.markdown("<h1>🧬 Blood Cell Classifier</h1>", unsafe_allow_html=True)
+st.markdown('<div class="subtitle">AI-Based Multi-Cell Detection System</div>', unsafe_allow_html=True)
+
+# -----------------------------------
+# MODEL DOWNLOAD (FIXED - gdown)
+# -----------------------------------
+MODEL_PATH = "model_best.pt"
+
+if not os.path.exists(MODEL_PATH):
+    st.info("⬇️ Downloading model... please wait")
+
+    file_id = "1OO3Uh4O5gWprhlXeqfeBNeLI_nKbbWfH"
+    url = f"https://drive.google.com/uc?id={file_id}"
+
+    gdown.download(url, MODEL_PATH, quiet=False)
+
+    st.success("✅ Model downloaded successfully")
+
+# -----------------------------------
+# LABELS
+# -----------------------------------
+labels = ["RBC", "WBC", "Platelets"]
+
+# -----------------------------------
+# DEVICE
+# -----------------------------------
+device = torch.device("cpu")
+
+# -----------------------------------
+# LOAD MODEL (FIXED SAFE WAY)
+# -----------------------------------
+model = build_model(len(labels))
+
+checkpoint = torch.load(MODEL_PATH, map_location=device)
+
+model.load_state_dict(checkpoint)
+model.to(device)
+model.eval()
+
+# -----------------------------------
+# IMAGE TRANSFORM
+# -----------------------------------
+tfm = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),
+    transforms.Normalize([0.485, 0.456, 0.406],
+                         [0.229, 0.224, 0.225])
+])
+
+# -----------------------------------
+# INPUT
+# -----------------------------------
+uploaded = st.file_uploader("📤 Upload Blood Cell Image")
+
+# -----------------------------------
+# PROCESS
+# -----------------------------------
+if uploaded:
+    img = Image.open(uploaded).convert("RGB")
+
+    x_full = tfm(img).unsqueeze(0)
+
+    with torch.no_grad():
+        probs_full = torch.softmax(model(x_full), dim=1)
+
+    # validation
+    if probs_full.max().item() < 0.6:
+        st.error("❌ Not a valid blood cell image")
+        st.stop()
+
+    img_np = np.array(img)
+    h, w, _ = img_np.shape
+
+    patch_size = 64
+    stride = 32
+
+    detected = set()
+
+    thresholds = {
+        "RBC": 0.55,
+        "WBC": 0.6,
+        "Platelets": 0.75
+    }
+
+    for y in range(0, h - patch_size + 1, stride):
+        for x in range(0, w - patch_size + 1, stride):
+
+            patch = img_np[y:y+patch_size, x:x+patch_size]
+
+            if np.mean(patch) > 240:
+                continue
+
+            patch_img = Image.fromarray(patch)
+            x_tensor = tfm(patch_img).unsqueeze(0)
+
+            with torch.no_grad():
+                probs = torch.softmax(model(x_tensor), dim=1)
+                pred = probs.argmax(1).item()
+
+            label = labels[pred]
+            confidence = probs[0, pred].item()
+
+            if confidence > thresholds[label]:
+                detected.add(label)
+
+    # -----------------------------------
+    # OUTPUT
+    # -----------------------------------
+    col1, col2 = st.columns([2, 1])
+
+    with col1:
+        st.image(img, caption="🖼 Uploaded Image", use_container_width=True)
+
+    with col2:
+        if detected:
+            st.markdown(
+                f'<div class="result-box">🔬 Detected Cells:<br>{", ".join(sorted(detected))}</div>',
+                unsafe_allow_html=True
+            )
+        else:
+            st.warning("⚠️ No cells detected")# HEADER
 # -----------------------------------
 st.markdown("<h1>🧬 Blood Cell Classifier</h1>", unsafe_allow_html=True)
 st.markdown('<div class="subtitle">AI-Based Multi-Cell Detection System</div>', unsafe_allow_html=True)
