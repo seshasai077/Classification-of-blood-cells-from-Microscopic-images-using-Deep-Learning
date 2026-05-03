@@ -69,10 +69,13 @@ if not os.path.exists(MODEL_PATH):
 labels = ["RBC", "WBC", "Platelets"]
 
 # -----------------------------------
-# LOAD MODEL
+# LOAD MODEL (FIXED)
 # -----------------------------------
 model = build_model(len(labels))
-model.load_state_dict(torch.load(MODEL_PATH, map_location="cpu"))
+
+state_dict = torch.load(MODEL_PATH, map_location="cpu", weights_only=True)
+model.load_state_dict(state_dict)
+
 model.eval()
 
 # -----------------------------------
@@ -95,6 +98,7 @@ if uploaded:
 
     # Validate image
     x_full = tfm(img).unsqueeze(0)
+
     with torch.no_grad():
         probs_full = torch.softmax(model(x_full), dim=1)
 
@@ -143,7 +147,7 @@ if uploaded:
     col1, col2 = st.columns([2, 1])
 
     with col1:
-        st.image(img, caption="🖼 Uploaded Image", use_column_width=True)
+        st.image(img, caption="🖼 Uploaded Image", use_container_width=True)
 
     with col2:
         if detected:
