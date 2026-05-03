@@ -40,7 +40,7 @@ st.markdown("<h1>🧬 Blood Cell Classifier</h1>", unsafe_allow_html=True)
 st.markdown('<div class="subtitle">AI-Based Multi-Cell Detection System</div>', unsafe_allow_html=True)
 
 # -----------------------------------
-# SAFE MODEL DOWNLOAD
+# MODEL DOWNLOAD
 # -----------------------------------
 def download_model(url, output_path):
     try:
@@ -69,13 +69,14 @@ if not os.path.exists(MODEL_PATH):
 labels = ["RBC", "WBC", "Platelets"]
 
 # -----------------------------------
-# LOAD MODEL (FIXED & SAFE)
+# LOAD MODEL (FIXED)
 # -----------------------------------
 model = build_model(len(labels))
 
-checkpoint = torch.load(MODEL_PATH, map_location="cpu")
+# 🔥 FIX IS HERE
+checkpoint = torch.load(MODEL_PATH, map_location="cpu", weights_only=False)
 
-# Handle both cases: state_dict OR full model
+# If state_dict format
 if isinstance(checkpoint, dict):
     model.load_state_dict(checkpoint)
 else:
@@ -89,19 +90,21 @@ model.eval()
 uploaded = st.file_uploader("📤 Upload Blood Cell Image")
 
 # -----------------------------------
+# TRANSFORM
+# -----------------------------------
+tfm = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),
+    transforms.Normalize([0.485, 0.456, 0.406],
+                         [0.229, 0.224, 0.225])
+])
+
+# -----------------------------------
 # PROCESS
 # -----------------------------------
 if uploaded:
     img = Image.open(uploaded).convert("RGB")
 
-    tfm = transforms.Compose([
-        transforms.Resize((224, 224)),
-        transforms.ToTensor(),
-        transforms.Normalize([0.485, 0.456, 0.406],
-                             [0.229, 0.224, 0.225])
-    ])
-
-    # Validate image
     x_full = tfm(img).unsqueeze(0)
 
     with torch.no_grad():
@@ -111,7 +114,6 @@ if uploaded:
         st.error("❌ Not a valid blood cell image")
         st.stop()
 
-    # Sliding window detection
     img_np = np.array(img)
     h, w, _ = img_np.shape
 
