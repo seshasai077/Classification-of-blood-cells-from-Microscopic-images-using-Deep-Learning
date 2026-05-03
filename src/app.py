@@ -69,12 +69,17 @@ if not os.path.exists(MODEL_PATH):
 labels = ["RBC", "WBC", "Platelets"]
 
 # -----------------------------------
-# LOAD MODEL (FIXED)
+# LOAD MODEL (FIXED & SAFE)
 # -----------------------------------
 model = build_model(len(labels))
 
-state_dict = torch.load(MODEL_PATH, map_location="cpu", weights_only=True)
-model.load_state_dict(state_dict)
+checkpoint = torch.load(MODEL_PATH, map_location="cpu")
+
+# Handle both cases: state_dict OR full model
+if isinstance(checkpoint, dict):
+    model.load_state_dict(checkpoint)
+else:
+    model = checkpoint
 
 model.eval()
 
@@ -123,6 +128,7 @@ if uploaded:
 
     for y in range(0, h - patch_size + 1, stride):
         for x in range(0, w - patch_size + 1, stride):
+
             patch = img_np[y:y+patch_size, x:x+patch_size]
 
             if np.mean(patch) > 240:
