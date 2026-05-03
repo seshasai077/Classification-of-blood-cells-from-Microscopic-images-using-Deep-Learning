@@ -3,7 +3,7 @@ from PIL import Image
 import torch
 from torchvision import transforms
 import numpy as np
-import gdown
+import urllib.request
 import os
 
 from model import build_model
@@ -40,13 +40,28 @@ st.markdown("<h1>🧬 Blood Cell Classifier</h1>", unsafe_allow_html=True)
 st.markdown('<div class="subtitle">AI-Based Multi-Cell Detection System</div>', unsafe_allow_html=True)
 
 # -----------------------------------
-# DOWNLOAD MODEL
+# SAFE MODEL DOWNLOAD
 # -----------------------------------
+def download_model(url, output_path):
+    try:
+        st.info("⬇️ Downloading model... please wait")
+
+        opener = urllib.request.build_opener()
+        opener.addheaders = [('User-Agent', 'Mozilla/5.0')]
+        urllib.request.install_opener(opener)
+
+        urllib.request.urlretrieve(url, output_path)
+
+        st.success("✅ Model downloaded successfully")
+    except Exception as e:
+        st.error(f"Download failed: {e}")
+        st.stop()
+
 MODEL_PATH = "model_best.pt"
 
 if not os.path.exists(MODEL_PATH):
-    url = "https://drive.google.com/uc?id=1OO3Uh4O5gWprhlXeqfeBNeLI_nKbbWfH"
-    gdown.download(url, MODEL_PATH, quiet=False)
+    url = "https://drive.google.com/uc?export=download&id=1OO3Uh4O5gWprhlXeqfeBNeLI_nKbbWfH"
+    download_model(url, MODEL_PATH)
 
 # -----------------------------------
 # LABELS
@@ -87,7 +102,7 @@ if uploaded:
         st.error("❌ Not a valid blood cell image")
         st.stop()
 
-    # Sliding window
+    # Sliding window detection
     img_np = np.array(img)
     h, w, _ = img_np.shape
 
