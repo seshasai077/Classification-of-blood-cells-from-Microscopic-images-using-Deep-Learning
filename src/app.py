@@ -37,7 +37,7 @@ h1 { text-align: center; font-size: 2.5rem !important; }
 # HEADER
 # -----------------------------------
 st.markdown("<h1>🧬 Blood Cell Classifier</h1>", unsafe_allow_html=True)
-st.markdown('<div class="subtitle">AI-Based Multi-Cell Detection System</div>', unsafe_allow_html=True)
+st.markdown('<div class="subtitle">CNN-Based Multi-Cell Detection System</div>', unsafe_allow_html=True)
 
 # -----------------------------------
 # DOWNLOAD MODEL (SAFE)
