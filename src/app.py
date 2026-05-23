@@ -67,7 +67,11 @@ labels = ["RBC", "WBC", "Platelets"]
 # LOAD MODEL
 # -----------------------------------
 model = build_model(len(labels))
-checkpoint = torch.load(MODEL_PATH, map_location="cpu")
+checkpoint = torch.load(
+    MODEL_PATH,
+    map_location=torch.device("cpu"),
+    weights_only=False
+)
 model.load_state_dict(checkpoint)
 model.eval()
 
